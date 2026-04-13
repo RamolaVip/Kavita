@@ -12,9 +12,10 @@ import {
   Share2, 
   PenTool,
   History,
-  Quote
+  Quote,
+  Library
 } from 'lucide-react';
-import { generateShayari } from './services/geminiService';
+import { generateShayari, getRandomFromDataset } from './services/geminiService';
 import { cn } from './lib/utils';
 
 interface Shayari {
@@ -23,6 +24,7 @@ interface Shayari {
   meaning: string;
   category: string;
   timestamp: number;
+  author?: string;
 }
 
 const CATEGORIES = [
@@ -59,6 +61,16 @@ export default function App() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleDiscover = () => {
+    const result = getRandomFromDataset(category);
+    const newShayari: Shayari = {
+      ...result,
+      timestamp: Date.now()
+    };
+    setCurrentShayari(newShayari);
+    setHistory(prev => [newShayari, ...prev].slice(0, 10));
   };
 
   const copyToClipboard = (text: string) => {
@@ -137,7 +149,7 @@ export default function App() {
             />
           </div>
 
-          <div className="flex justify-center">
+          <div className="flex flex-col sm:flex-row justify-center gap-4">
             <button
               onClick={handleGenerate}
               disabled={loading}
@@ -149,7 +161,18 @@ export default function App() {
                 ) : (
                   <Sparkles className="w-5 h-5" />
                 )}
-                {loading ? "Kalam chal rahi hai..." : "Generate Shayari"}
+                {loading ? "Kalam chal rahi hai..." : "AI Generate"}
+              </span>
+            </button>
+            
+            <button
+              onClick={handleDiscover}
+              disabled={loading}
+              className="group relative px-8 py-4 bg-ink text-paper rounded-2xl font-bold text-lg shadow-xl hover:shadow-ink/20 hover:-translate-y-1 transition-all disabled:opacity-50 disabled:translate-y-0 cursor-pointer"
+            >
+              <span className="flex items-center gap-2">
+                <Library className="w-5 h-5" />
+                Discover Classic
               </span>
             </button>
           </div>
@@ -175,6 +198,9 @@ export default function App() {
                     <h2 className="text-3xl md:text-4xl font-serif font-bold text-ink leading-relaxed whitespace-pre-line">
                       {currentShayari.hindi}
                     </h2>
+                    {currentShayari.author && (
+                      <p className="mt-4 text-gold font-serif italic">— {currentShayari.author}</p>
+                    )}
                   </div>
                   
                   <div className="mb-8 py-4 border-y border-gold/10">
@@ -251,7 +277,7 @@ export default function App() {
                       <div className="flex justify-between items-start">
                         <p className="text-ink font-serif line-clamp-1">{item.hindi}</p>
                         <span className="text-[10px] uppercase tracking-tighter text-gold font-bold">
-                          {CATEGORIES.find(c => c.id === item.category)?.label}
+                          {CATEGORIES.find(c => c.id === item.category)?.label || 'Classic'}
                         </span>
                       </div>
                     </div>
